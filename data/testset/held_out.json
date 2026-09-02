@@ -1,0 +1,102 @@
+[
+  {
+    "record_ref": "REF126225",
+    "expected": "exception",
+    "reason": "AMOUNT_MISMATCH"
+  },
+  {
+    "record_ref": "REF872246",
+    "expected": "exception",
+    "reason": "DUPLICATE_DETECTED"
+  },
+  {
+    "record_ref": "REF542417",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF343962",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF308496",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF717889",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF267414",
+    "expected": "exception",
+    "reason": "DUPLICATE_DETECTED"
+  },
+  {
+    "record_ref": "REF325772",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF201414",
+    "expected": "exception",
+    "reason": "MISSING_IN_BANK"
+  },
+  {
+    "record_ref": "REF946335",
+    "expected": "exception",
+    "reason": "DUPLICATE_DETECTED"
+  },
+  {
+    "record_ref": "REF496922",
+    "expected": "match",
+    "reason": "SETTLEMENT_LAG"
+  },
+  {
+    "record_ref": "REF759176",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF838797",
+    "expected": "exception",
+    "reason": "AMOUNT_MISMATCH"
+  },
+  {
+    "record_ref": "REF910620",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF205907",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF974628",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF319684",
+    "expected": "match",
+    "reason": "EXACT"
+  },
+  {
+    "record_ref": "REF279451",
+    "expected": "match",
+    "reason": "SETTLEMENT_LAG"
+  },
+  {
+    "record_ref": "REF497887",
+    "expected": "exception",
+    "reason": "AMOUNT_MISMATCH"
+  },
+  {
+    "record_ref": "REF440035",
+    "expected": "match",
+    "reason": "EXACT"
+  }
+]
