@@ -25,7 +25,6 @@ class QAResponse(BaseModel):
 async def ask_qa(req: QARequest, db: AsyncSession = Depends(get_db)):
     result = await answer_question(req.question, req.batch_id)
 
-    # Persist log to qa_logs table
     try:
         if req.batch_id:
             qa_log = QALogDB(

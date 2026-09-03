@@ -39,7 +39,6 @@ class NormalizedRecord(BaseModel):
             return v
         if isinstance(v, str):
             v_str = v.strip()
-            # Try formats 'YYYY-MM-DD', 'DD-MM-YYYY', 'YYYY/MM/DD', 'DD/MM/YYYY'
             for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%Y/%m/%d", "%d/%m/%Y"):
                 try:
                     return datetime.strptime(v_str, fmt).date()

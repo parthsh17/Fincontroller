@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     chroma_collection: str = Field(
         default="settlement_docs", alias="CHROMA_COLLECTION"
     )
-    llm_model: str = Field(default="openai/gpt-oss-120b", alias="LLM_MODEL")
+    llm_model: str = Field(default="llama-3.3-70b-versatile", alias="LLM_MODEL")
     llm_max_retries: int = Field(default=3, alias="LLM_MAX_RETRIES")
     fuzzy_threshold: float = Field(default=75.0, alias="FUZZY_THRESHOLD")
     fuzzy_amount_tolerance_pct: float = Field(
@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     @classmethod
     def remap_deprecated_models(cls, v: str) -> str:
         deprecated_map = {
-            "llama3-70b-8192": "openai/gpt-oss-120b",
-            "llama3-8b-8192": "openai/gpt-oss-120b",
-            "llama-3.1-70b-versatile": "openai/gpt-oss-120b",
+            "llama3-70b-8192": "llama-3.3-70b-versatile",
+            "llama3-8b-8192": "llama-3.1-8b-instant",
+            "llama-3.1-70b-versatile": "llama-3.3-70b-versatile",
         }
         return deprecated_map.get(v.strip(), v.strip())
 

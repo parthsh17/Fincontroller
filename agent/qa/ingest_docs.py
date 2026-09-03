@@ -7,7 +7,6 @@ import chromadb
 import httpx
 from sentence_transformers import SentenceTransformer
 
-# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from backend.config import settings
@@ -29,14 +28,13 @@ def ingest_documents(batch_id: str, csv_path: str = "data/samples/settlement_rep
     metadatas: list[dict] = []
     ids: list[str] = []
 
-    # 1. Ingest settlement CSV records
     if os.path.exists(csv_path):
         with open(csv_path, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for idx, row in enumerate(reader):
                 doc_text = (
                     f"Settlement {row.get('settlement_id', 'N/A')} on {row.get('date', 'N/A')}: "
-                    f"₹{row.get('amount', '0')} — {row.get('description', '')}"
+                    f"INR {row.get('amount', '0')} - {row.get('description', '')}"
                 )
                 doc_id = f"{batch_id}_settlement_{idx}"
                 documents.append(doc_text)
@@ -48,7 +46,6 @@ def ingest_documents(batch_id: str, csv_path: str = "data/samples/settlement_rep
                 })
                 ids.append(doc_id)
 
-    # 2. Fetch report data via local API or fallback
     try:
         with httpx.Client(timeout=10.0) as http_client:
             res = http_client.get(f"http://localhost:8000/api/report/{batch_id}")

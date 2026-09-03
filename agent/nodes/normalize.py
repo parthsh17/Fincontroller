@@ -8,7 +8,6 @@ from backend.models.record import NormalizedRecord
 def normalize_record(
     raw_row: dict[str, Any], source: str, batch_id: uuid.UUID
 ) -> NormalizedRecord | None:
-    # Lowercase dictionary keys for case-insensitive lookup
     row_lower = {str(k).lower().strip(): v for k, v in raw_row.items()}
 
     date_val = None

@@ -14,7 +14,6 @@ from agent.state import BatchState
 
 
 async def normalize_node(state: BatchState) -> BatchState:
-    """Loads normalized records from the database into state.all_records."""
     batch_id = state["batch_id"]
 
     try:
@@ -56,7 +55,6 @@ async def normalize_node(state: BatchState) -> BatchState:
     return state
 
 
-# Build graph
 workflow = StateGraph(BatchState)
 
 workflow.add_node("normalize", normalize_node)
@@ -78,7 +76,6 @@ app_graph = workflow.compile()
 
 
 async def run_graph(batch_id: str):
-    """Executes the reconciliation graph asynchronously as a background task."""
     logger.info(f"Starting reconciliation graph for batch {batch_id}")
 
     try:

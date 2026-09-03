@@ -28,17 +28,9 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
         desc = rec["description"]
         customer_name = rec.get("customer_name", "Customer")
 
-        # Roll category based on target percentages:
-        # 60% EXACT (0..59)
-        # 15% SETTLEMENT_LAG (60..74)
-        # 10% AMOUNT_MISMATCH (75..84)
-        # 8% MISSING_IN_BANK (85..92)
-        # 5% DUPLICATE_DETECTED (93..97)
-        # 2% UNIDENTIFIED (98..99)
         roll = random.randint(0, 99)
 
         if roll < 60:
-            # Rule 1: EXACT
             bank_rows.append({
                 "date": dt.strftime("%Y-%m-%d"),
                 "amount": f"{amount:.2f}",
@@ -66,7 +58,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
             })
 
         elif roll < 75:
-            # Rule 2: SETTLEMENT_LAG (T+1)
             rp_date = dt + timedelta(days=1)
             bank_rows.append({
                 "date": dt.strftime("%Y-%m-%d"),
@@ -95,7 +86,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
             })
 
         elif roll < 85:
-            # Rule 3: AMOUNT_MISMATCH
             fee = Decimal(str(round(random.uniform(50, 200), 2)))
             bank_amount = amount - fee
             bank_rows.append({
@@ -125,8 +115,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
             })
 
         elif roll < 93:
-            # Rule 4: MISSING_IN_BANK
-            # Exists in razorpay + ledger, NOT in bank
             razorpay_rows.append({
                 "date": dt.strftime("%Y-%m-%d"),
                 "amount": f"{amount:.2f}",
@@ -148,7 +136,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
             })
 
         elif roll < 98:
-            # Rule 5: DUPLICATE_DETECTED
             bank_rows.append({
                 "date": dt.strftime("%Y-%m-%d"),
                 "amount": f"{amount:.2f}",
@@ -162,7 +149,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
                 "payment_id": f"pay_{ref_id}",
                 "description": desc,
             })
-            # Add ledger row twice
             ledger_rows.append({
                 "date": dt.strftime("%Y-%m-%d"),
                 "amount": f"{amount:.2f}",
@@ -184,7 +170,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
             })
 
         else:
-            # Rule 6: UNIDENTIFIED
             rand_ref_b = f"REF{random.randint(100000, 999999)}"
             rand_ref_r = f"REF{random.randint(100000, 999999)}"
             rand_ref_l = f"REF{random.randint(100000, 999999)}"
@@ -214,7 +199,6 @@ def inject_noise(base_records: list[dict], seed: int = 42) -> NoisyBatch:
                 "reason": "UNIDENTIFIED",
             })
 
-    # Shuffle rows to avoid natural ordering matching
     random.shuffle(bank_rows)
     random.shuffle(razorpay_rows)
     random.shuffle(ledger_rows)

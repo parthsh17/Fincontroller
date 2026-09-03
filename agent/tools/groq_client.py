@@ -12,7 +12,6 @@ from backend.models.match import LLMMatchDecision
 class GroqClient:
     def __init__(self, api_key: str | None = None):
         key = api_key or settings.groq_api_key
-        # If key is empty, client might still initialize or error on request
         self.client = AsyncGroq(api_key=key if key else "dummy_key")
         self.total_calls: int = 0
         self.cumulative_latency_ms: float = 0.0
@@ -59,7 +58,6 @@ class GroqClient:
                 self.cumulative_latency_ms += latency
 
                 content = response.choices[0].message.content or "{}"
-                # Safe parse via Pydantic model
                 decision_dict = json.loads(content)
                 decision = LLMMatchDecision.model_validate(decision_dict)
 

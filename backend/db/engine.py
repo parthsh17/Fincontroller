@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from backend.config import settings
 
+
 def get_async_db_url(url: str) -> str:
     clean_url = url.strip()
     if clean_url.startswith("postgresql://"):

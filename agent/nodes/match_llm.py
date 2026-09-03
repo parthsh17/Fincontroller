@@ -38,14 +38,10 @@ async def llm_match_node(state: BatchState) -> BatchState:
     ]
 
     llm_calls_made = 0
-    total_latency_ms = 0.0
-
     pct_tol = settings.fuzzy_amount_tolerance_pct
     abs_tol = settings.fuzzy_amount_tolerance_abs
-    date_window = settings.fuzzy_date_window_days
     threshold = settings.llm_confidence_threshold
 
-    # Only run LLM on ambiguous candidate pairs
     for pair in ambiguous_pairs:
         rec_a = pair.get("record_a", {})
         rec_b = pair.get("record_b", {})
@@ -65,9 +61,7 @@ async def llm_match_node(state: BatchState) -> BatchState:
             b_id = str(b_rec["id"])
 
             l_amt = parse_dec(l_rec.get("amount"))
-            l_desc = l_rec.get("description") or ""
 
-            # Find matching Razorpay record if available
             matched_r_rec = None
             matched_r_id = None
 
@@ -107,7 +101,6 @@ async def llm_match_node(state: BatchState) -> BatchState:
             if rec_b and id_b not in matched_ids:
                 unmatched_after_llm.append(rec_b)
 
-    # Remaining unmatched records in pending list
     remaining_pending = [r for r in pending if str(r["id"]) not in matched_ids]
     for r in remaining_pending:
         if not any(str(u.get("id")) == str(r["id"]) for u in unmatched_after_llm):
@@ -124,7 +117,6 @@ async def llm_match_node(state: BatchState) -> BatchState:
     state["pending_records"] = remaining_pending
     state["unmatched_after_llm"] = unmatched_after_llm
 
-    # Persist to DB
     try:
         async with async_session_maker() as session:
             for m in new_llm_matches:

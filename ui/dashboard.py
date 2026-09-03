@@ -4,8 +4,8 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="BrewBox",
-    page_icon="",
+    page_title="BrewBox - AI Finance Controller",
+    page_icon="none",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -89,7 +89,6 @@ if nav_page == "1. Upload & Run":
                             st.session_state["batch_id"] = batch_id
                             st.success(f"Batch created! ID: `{batch_id}`")
 
-                            # Polling status
                             progress_bar = st.progress(0, text="Running multi-pass reconciliation...")
                             status = "pending"
                             for step in range(30):
@@ -110,7 +109,6 @@ if nav_page == "1. Upload & Run":
                             progress_bar.progress(100, text=f"Reconciliation Complete: {status.upper()}")
 
                             if status == "done":
-                                # Fetch final report
                                 rep_resp = client.get(f"{API_BASE_URL}/report/{batch_id}")
                                 if rep_resp.status_code == 200:
                                     rep = rep_resp.json()
@@ -127,8 +125,6 @@ if nav_page == "1. Upload & Run":
                 except Exception as e:
                     st.error(f"Failed to connect to API server: {e}")
 
-
-# PAGE 2: Results
 elif nav_page == "2. Reconciliation Results":
     st.markdown('<div class="main-header">Reconciliation Results & Audit</div>', unsafe_allow_html=True)
     batch_id = st.session_state.get("batch_id")
@@ -159,7 +155,6 @@ elif nav_page == "2. Reconciliation Results":
                             use_container_width=True,
                         )
 
-                    # Metric row
                     r1, r2, r3, r4 = st.columns(4)
                     r1.metric("Match Rate", f"{summary.get('match_rate', 0.0):.1%}")
                     r2.metric("Total Matched Groups", summary.get("total_matched", 0))
@@ -168,7 +163,6 @@ elif nav_page == "2. Reconciliation Results":
 
                     st.markdown("---")
 
-                    # Section 1: Matched Records
                     st.subheader("Matched Transactions")
                     matches = report.get("matches", [])
                     if matches:
@@ -178,7 +172,7 @@ elif nav_page == "2. Reconciliation Results":
                             table_rows.append({
                                 "Match Stage": m.get("match_type", "").upper(),
                                 "Confidence": f"{m.get('confidence', 0.0):.2f}",
-                                "Amount (₹)": bk.get("amount") or "N/A",
+                                "Amount (INR)": bk.get("amount") or "N/A",
                                 "Date": bk.get("date") or "N/A",
                                 "Ref ID": bk.get("ref_id") or "N/A",
                                 "Notes": m.get("notes") or "",
@@ -200,7 +194,6 @@ elif nav_page == "2. Reconciliation Results":
                     else:
                         st.write("No matched records found.")
 
-                    # Section 2: Exceptions
                     st.subheader("Exceptions & Reason Codes")
                     exceptions = report.get("exceptions", [])
                     breakdown = report.get("exception_breakdown", [])
@@ -217,8 +210,6 @@ elif nav_page == "2. Reconciliation Results":
         except Exception as e:
             st.error(f"Error loading report: {e}")
 
-
-# PAGE 3: Settlement Q&A
 elif nav_page == "3. Settlement Q&A":
     st.markdown('<div class="main-header">Settlement Q&A Assistant</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Ask natural language questions about your reconciliations, settlements, and exceptions.</div>', unsafe_allow_html=True)
@@ -260,7 +251,6 @@ elif nav_page == "3. Settlement Q&A":
             except Exception as e:
                 st.error(f"Failed to query QA endpoint: {e}")
 
-    # Display chat history
     for entry in reversed(st.session_state["chat_history"]):
         with st.chat_message("user"):
             st.write(entry["question"])

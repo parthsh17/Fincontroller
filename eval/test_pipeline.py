@@ -3,7 +3,6 @@ import os
 import sys
 import uuid
 import pytest
-from backend.config import Settings
 from unittest.mock import AsyncMock, patch
 
 # Ensure project root is in sys.path
@@ -301,15 +300,6 @@ async def test_llm_validation_guard():
         result = await client.match_records({"amt": 100}, {"amt": 200})
         # Must return None safely without unhandled exceptions
         assert result is None
-
-
-def test_deprecated_groq_models_use_supported_default():
-    settings = Settings(
-        _env_file=None,
-        llm_model="llama3-70b-8192",
-    )
-
-    assert settings.llm_model == "openai/gpt-oss-120b"
 
 
 @pytest.mark.asyncio

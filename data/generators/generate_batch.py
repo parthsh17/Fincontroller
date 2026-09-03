@@ -7,7 +7,6 @@ import sys
 from datetime import date, timedelta
 from decimal import Decimal
 
-# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from data.generators.noise import inject_noise
@@ -59,7 +58,6 @@ def generate_data(seed: int = 42, count: int = 100):
     os.makedirs("data/samples", exist_ok=True)
     os.makedirs("data/testset", exist_ok=True)
 
-    # Save bank_statement.csv
     bank_path = "data/samples/bank_statement.csv"
     with open(bank_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
@@ -68,7 +66,6 @@ def generate_data(seed: int = 42, count: int = 100):
         writer.writeheader()
         writer.writerows(noisy_batch.bank_rows)
 
-    # Save settlement_report.csv
     rp_path = "data/samples/settlement_report.csv"
     with open(rp_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
@@ -84,7 +81,6 @@ def generate_data(seed: int = 42, count: int = 100):
         writer.writeheader()
         writer.writerows(noisy_batch.razorpay_rows)
 
-    # Save internal_ledger.csv
     ledger_path = "data/samples/internal_ledger.csv"
     with open(ledger_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
@@ -94,7 +90,6 @@ def generate_data(seed: int = 42, count: int = 100):
         writer.writeheader()
         writer.writerows(noisy_batch.ledger_rows)
 
-    # Save held_out.json (first 20 records)
     held_out_path = "data/testset/held_out.json"
     with open(held_out_path, "w", encoding="utf-8") as f:
         json.dump(noisy_batch.ground_truth[:20], f, indent=2)

@@ -22,7 +22,6 @@ async def answer_question(question: str, batch_id: str) -> dict:
         embedder = get_embedder()
         q_emb = embedder.encode([question]).tolist()
 
-        # Query top 5 chunks matching batch_id if available
         results = collection.query(
             query_embeddings=q_emb,
             n_results=5,
@@ -38,14 +37,13 @@ async def answer_question(question: str, batch_id: str) -> dict:
         system_prompt = (
             "You are a financial reconciliation assistant for BrewBox. "
             "Answer questions about settlements and reconciliation results "
-            "using ONLY the context provided. Be specific with ₹ amounts "
+            "using ONLY the context provided. Be specific with amounts "
             "and dates. If the answer is not in the context, respond: "
             "'I don't have that information in the reconciliation data.'"
         )
 
         user_prompt = f"Context:\n{context_str}\n\nQuestion: {question}"
 
-        # Call Groq
         if settings.groq_api_key:
             groq_async = AsyncGroq(api_key=settings.groq_api_key)
             resp = await groq_async.chat.completions.create(

@@ -71,7 +71,7 @@ class NormalizedRecordDB(Base):
         ForeignKey("batches.id", ondelete="CASCADE"),
         nullable=False,
     )
-    source = Column(String, nullable=False)  # 'bank' | 'razorpay' | 'ledger'
+    source = Column(String, nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     date = Column(Date, nullable=False)
     ref_id = Column(String, nullable=True)
@@ -108,7 +108,7 @@ class MatchResultDB(Base):
         ForeignKey("normalized_records.id", ondelete="SET NULL"),
         nullable=True,
     )
-    match_type = Column(String, nullable=False)  # 'exact' | 'fuzzy' | 'llm'
+    match_type = Column(String, nullable=False)
     confidence = Column(Float, nullable=False)
     notes = Column(String, nullable=True)
 

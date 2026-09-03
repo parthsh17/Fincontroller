@@ -33,8 +33,6 @@ async def report_node(state: BatchState) -> BatchState:
                 )
             )
 
-            # In 3-way reconciliation, each matched group covers 3 records (or 2-3 records).
-            # We calculate match_rate as matched groups / (total baseline ledger or unique events) or matched records / total_records.
             matched_record_ids_count = len(state.get("matched_ids", set()))
             match_rate = (
                 (matched_record_ids_count / total_records)
@@ -78,12 +76,12 @@ async def report_node(state: BatchState) -> BatchState:
     }
 
     logger.info(
-        f"══════════════════════════════════════════════════════\n"
-        f"Batch {batch_id} Reconciliation Complete!\n"
+        f"--------------------------------------------------\n"
+        f"Batch {batch_id} Reconciliation Complete\n"
         f"Total Matched: {total_matched} (Exact: {total_exact}, Fuzzy: {total_fuzzy}, LLM: {total_llm})\n"
         f"Exceptions: {total_exceptions}\n"
         f"Match Rate: {match_rate:.1%}\n"
-        f"══════════════════════════════════════════════════════"
+        f"--------------------------------------------------"
     )
 
     return state

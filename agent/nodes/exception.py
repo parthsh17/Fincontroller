@@ -33,7 +33,6 @@ async def exception_node(state: BatchState) -> BatchState:
     all_records = state.get("all_records", {})
     matched_ids = set(state.get("matched_ids", set()))
 
-    # Gather all unmatched records uniquely
     unmatched_list = []
     seen_ids = set()
 
@@ -47,7 +46,6 @@ async def exception_node(state: BatchState) -> BatchState:
     rp_all = all_records.get("razorpay", [])
     ledger_all = all_records.get("ledger", [])
 
-    # Index ref_ids and counts by source to detect duplicates
     ledger_ref_counts: dict[str, list[dict]] = {}
     for r in ledger_all:
         ref = (r.get("ref_id") or "").strip()
@@ -84,7 +82,6 @@ async def exception_node(state: BatchState) -> BatchState:
         related_ids = [rec_id]
         raw_map = {source: rec.get("raw", {})}
 
-        # Check 1: DUPLICATE_DETECTED (Same ref appears multiple times in same source)
         if ref_id and (
             len(ledger_ref_counts.get(ref_id, [])) > 1
             or len(bank_ref_counts.get(ref_id, [])) > 1
@@ -92,7 +89,6 @@ async def exception_node(state: BatchState) -> BatchState:
         ):
             reason_code = "DUPLICATE_DETECTED"
             description = f"Duplicate reference ID '{ref_id}' found in records."
-            # Collect all duplicate entries
             dup_records = (
                 ledger_ref_counts.get(ref_id, [])
                 + bank_ref_counts.get(ref_id, [])
@@ -105,7 +101,6 @@ async def exception_node(state: BatchState) -> BatchState:
                 raw_map[f"{d.get('source')}_{d_id[:6]}"] = d.get("raw", {})
                 processed_exception_ids.add(d_id)
 
-        # Check 2: MISSING_IN_BANK (Found in razorpay and ledger with matching ref, absent in bank)
         elif (
             ref_id
             and (ref_id in rp_ref_counts)
@@ -127,7 +122,6 @@ async def exception_node(state: BatchState) -> BatchState:
             for rid in related_ids:
                 processed_exception_ids.add(rid)
 
-        # Check 3: MISSING_IN_RAZORPAY (Found in bank and ledger, absent in razorpay)
         elif (
             ref_id
             and (ref_id in bank_ref_counts)
@@ -149,13 +143,11 @@ async def exception_node(state: BatchState) -> BatchState:
             for rid in related_ids:
                 processed_exception_ids.add(rid)
 
-        # Check 4: AMOUNT_MISMATCH (Ref matches across sources, but amounts differ)
         elif ref_id and (
             (ref_id in bank_ref_counts and ref_id in rp_ref_counts)
             or (ref_id in bank_ref_counts and ref_id in ledger_ref_counts)
             or (ref_id in rp_ref_counts and ref_id in ledger_ref_counts)
         ):
-            # Check for amount difference
             b_item = bank_ref_counts.get(ref_id, [None])[0]
             r_item = rp_ref_counts.get(ref_id, [None])[0]
             l_item = ledger_ref_counts.get(ref_id, [None])[0]
@@ -173,8 +165,8 @@ async def exception_node(state: BatchState) -> BatchState:
                 diff = max(amt_vals) - min(amt_vals)
                 reason_code = "AMOUNT_MISMATCH"
                 description = (
-                    f"Amount mismatch for reference '{ref_id}': differs by ₹{diff:.2f} "
-                    f"({', '.join(f'{src}: ₹{amt:.2f}' for src, amt, _ in amounts)})."
+                    f"Amount mismatch for reference '{ref_id}': differs by {diff:.2f} "
+                    f"({', '.join(f'{src}: {amt:.2f}' for src, amt, _ in amounts)})."
                 )
                 for src, _, item in amounts:
                     i_id = str(item.get("id"))
@@ -186,9 +178,7 @@ async def exception_node(state: BatchState) -> BatchState:
                 reason_code = "DATE_MISMATCH"
                 description = f"Date discrepancy exceeds threshold for reference '{ref_id}'."
 
-        # Check 5: DATE_MISMATCH (Amount and description match, but date diff > 3 days)
         else:
-            # Try to see if exact amount exists in other sources with large date offset
             other_recs = []
             for other_src, other_list in [
                 ("bank", bank_all),
@@ -207,7 +197,7 @@ async def exception_node(state: BatchState) -> BatchState:
                 if date_diff > 3:
                     reason_code = "DATE_MISMATCH"
                     description = (
-                        f"Matching amount ₹{amount:.2f} found but transaction date "
+                        f"Matching amount {amount:.2f} found but transaction date "
                         f"differs by {date_diff} days."
                     )
                     o_id = str(o.get("id"))
@@ -221,7 +211,7 @@ async def exception_node(state: BatchState) -> BatchState:
             if not date_mismatch_found:
                 reason_code = "UNIDENTIFIED"
                 description = (
-                    f"Unidentified entry in {source} for ₹{amount:.2f} on {rec_date}. "
+                    f"Unidentified entry in {source} for {amount:.2f} on {rec_date}. "
                     "No corresponding records found."
                 )
 
@@ -239,7 +229,6 @@ async def exception_node(state: BatchState) -> BatchState:
 
     state["exception_records"] = exception_records
 
-    # Save to database
     try:
         async with async_session_maker() as session:
             for exc in exception_records:

@@ -46,9 +46,20 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
     pending_razorpay = [r for r in pending if r.get("source") == "razorpay" and str(r["id"]) not in matched_ids]
     pending_ledger = [r for r in pending if r.get("source") == "ledger" and str(r["id"]) not in matched_ids]
 
+    # Collect duplicate references across all sources
+    all_recs_map = state.get("all_records", {})
+    dup_refs = set()
+    for rec_list in [all_recs_map.get("bank", []), all_recs_map.get("razorpay", []), all_recs_map.get("ledger", [])]:
+        counts: dict[str, int] = {}
+        for r in rec_list:
+            ref = (r.get("ref_id") or "").strip()
+            if ref:
+                counts[ref] = counts.get(ref, 0) + 1
+        for ref, cnt in counts.items():
+            if cnt > 1:
+                dup_refs.add(ref)
+
     threshold = settings.fuzzy_threshold
-    pct_tol = settings.fuzzy_amount_tolerance_pct
-    abs_tol = settings.fuzzy_amount_tolerance_abs
     date_window = settings.fuzzy_date_window_days
 
     for l_rec in pending_ledger:
@@ -61,6 +72,9 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
         l_desc = l_rec.get("description") or ""
         l_ref = (l_rec.get("ref_id") or "").strip()
 
+        if l_ref and l_ref in dup_refs:
+            continue
+
         found_match = False
 
         for b_rec in pending_bank:
@@ -68,44 +82,48 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
             if b_id in matched_ids:
                 continue
 
+            b_ref = (b_rec.get("ref_id") or "").strip()
+            if b_ref and b_ref in dup_refs:
+                continue
+
             b_amt = parse_dec(b_rec.get("amount"))
             b_date = to_date_obj(b_rec.get("date"))
             b_desc = b_rec.get("description") or ""
-            b_ref = (b_rec.get("ref_id") or "").strip()
 
-            amt_ok_lb = amount_within_tolerance(l_amt, b_amt, pct_tol, abs_tol)
+            # For fuzzy matching, amounts must match (settlement lag has identical amount with T+1/T+2 date shift)
+            amt_exact_lb = (l_amt == b_amt)
             date_ok_lb = date_within_window(l_date, b_date, date_window)
 
-            if not (amt_ok_lb and date_ok_lb):
+            if not (amt_exact_lb and date_ok_lb):
                 continue
 
-            # Calculate desc score or ref match
             desc_score_lb = fuzzy_score(l_desc, b_desc)
             if l_ref and b_ref and l_ref == b_ref:
                 desc_score_lb = max(desc_score_lb, 1.0)
             elif not l_desc or not b_desc:
-                # If descriptions are missing, but amount and date match perfectly
                 if l_amt == b_amt and l_date == b_date:
                     desc_score_lb = 0.9
 
             score_pct_lb = desc_score_lb * 100.0
 
             if score_pct_lb >= threshold:
-                # Try finding matching Razorpay record
                 for r_rec in pending_razorpay:
                     r_id = str(r_rec["id"])
                     if r_id in matched_ids:
                         continue
 
+                    r_ref = (r_rec.get("ref_id") or "").strip()
+                    if r_ref and r_ref in dup_refs:
+                        continue
+
                     r_amt = parse_dec(r_rec.get("amount"))
                     r_date = to_date_obj(r_rec.get("date"))
                     r_desc = r_rec.get("description") or ""
-                    r_ref = (r_rec.get("ref_id") or "").strip()
 
-                    amt_ok_lr = amount_within_tolerance(l_amt, r_amt, pct_tol, abs_tol)
+                    amt_exact_lr = (l_amt == r_amt)
                     date_ok_lr = date_within_window(l_date, r_date, date_window)
 
-                    if not (amt_ok_lr and date_ok_lr):
+                    if not (amt_exact_lr and date_ok_lr):
                         continue
 
                     desc_score_lr = fuzzy_score(l_desc, r_desc)
@@ -137,7 +155,7 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
                             "confidence": confidence,
                             "notes": (
                                 f"Fuzzy matched with date delta (T+{abs((l_date - r_date).days)}) "
-                                f"and amt tolerance (diff ₹{abs(l_amt - b_amt):.2f})"
+                                f"and amt tolerance (diff {abs(l_amt - b_amt):.2f})"
                             ),
                         }
                         matched_ids.update([l_id, b_id, r_id])
@@ -150,14 +168,12 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
                     break
 
             elif 50.0 <= score_pct_lb < threshold:
-                # Ambiguous pair for LLM
                 ambiguous_pairs.append({
                     "record_a": l_rec,
                     "record_b": b_rec,
                     "reason": f"Ambiguous fuzzy similarity score: {score_pct_lb:.1f}%",
                 })
 
-    # Update pending records
     new_pending = [r for r in pending if str(r["id"]) not in matched_ids]
 
     state["matched_ids"] = matched_ids
@@ -165,7 +181,6 @@ async def fuzzy_match_node(state: BatchState) -> BatchState:
     state["ambiguous_pairs"] = ambiguous_pairs
     state["pending_records"] = new_pending
 
-    # Write fuzzy matches to DB
     try:
         async with async_session_maker() as session:
             for m in new_fuzzy_matches:

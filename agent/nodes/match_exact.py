@@ -26,6 +26,17 @@ async def exact_match_node(state: BatchState) -> BatchState:
     matched_ids = set(state.get("matched_ids", set()))
     match_results = list(state.get("match_results", []))
     new_exact_matches: list[dict] = []
+    # Identify references that appear more than once in the same source
+    dup_refs = set()
+    for rec_list in [bank_records, razorpay_records, ledger_records]:
+        counts: dict[str, int] = {}
+        for r in rec_list:
+            ref = (r.get("ref_id") or "").strip()
+            if ref:
+                counts[ref] = counts.get(ref, 0) + 1
+        for ref, cnt in counts.items():
+            if cnt > 1:
+                dup_refs.add(ref)
 
     for l_rec in ledger_records:
         l_id = str(l_rec["id"])
@@ -36,11 +47,19 @@ async def exact_match_node(state: BatchState) -> BatchState:
         l_date = str(l_rec.get("date"))
         l_ref = (l_rec.get("ref_id") or "").strip()
 
+        # If reference is duplicate in any source, skip exact matching so it goes to exception triage
+        if l_ref and l_ref in dup_refs:
+            continue
+
         found_match = False
 
         for b_rec in bank_records:
             b_id = str(b_rec["id"])
             if b_id in matched_ids:
+                continue
+
+            b_ref = (b_rec.get("ref_id") or "").strip()
+            if b_ref and b_ref in dup_refs:
                 continue
 
             b_amt = parse_dec(b_rec.get("amount"))
@@ -62,8 +81,6 @@ async def exact_match_node(state: BatchState) -> BatchState:
                 if l_amt != r_amt or l_date != r_date:
                     continue
 
-                # If ref_ids exist, verify correlation if available
-                # (either ledger ref equals bank or rp ref, or rp ref equals bank ref)
                 ref_check_passed = True
                 if l_ref and b_ref and r_ref:
                     ref_check_passed = (l_ref == b_ref) or (l_ref == r_ref) or (b_ref == r_ref)
@@ -92,7 +109,6 @@ async def exact_match_node(state: BatchState) -> BatchState:
             if found_match:
                 break
 
-    # Determine pending records (unmatched after pass 1)
     pending_records = []
     for source, rec_list in [
         ("bank", bank_records),
@@ -107,7 +123,6 @@ async def exact_match_node(state: BatchState) -> BatchState:
     state["match_results"] = match_results
     state["pending_records"] = pending_records
 
-    # Save exact matches to database
     try:
         async with async_session_maker() as session:
             for m in new_exact_matches:
@@ -123,7 +138,6 @@ async def exact_match_node(state: BatchState) -> BatchState:
                 )
                 session.add(match_db)
 
-            # Update batch count
             await session.execute(
                 update(Batch)
                 .where(Batch.id == uuid.UUID(batch_id))

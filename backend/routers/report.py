@@ -30,7 +30,6 @@ router = APIRouter(prefix="/api", tags=["Report"])
 
 @router.get("/report/{batch_id}", response_model=BatchReport)
 async def get_report(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    # Query batch
     stmt = select(Batch).where(Batch.id == batch_id)
     res = await db.execute(stmt)
     batch = res.scalar_one_or_none()
@@ -38,17 +37,14 @@ async def get_report(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
 
-    # Query matches
     m_stmt = select(MatchResultDB).where(MatchResultDB.batch_id == batch_id)
     m_res = await db.execute(m_stmt)
     matches_db = m_res.scalars().all()
 
-    # Query exceptions
     e_stmt = select(ExceptionRecordDB).where(ExceptionRecordDB.batch_id == batch_id)
     e_res = await db.execute(e_stmt)
     exceptions_db = e_res.scalars().all()
 
-    # Load normalized records map for enriching match objects
     n_stmt = select(NormalizedRecordDB).where(NormalizedRecordDB.batch_id == batch_id)
     n_res = await db.execute(n_stmt)
     norm_records = {str(r.id): r for r in n_res.scalars().all()}
@@ -200,7 +196,7 @@ async def get_report_pdf(batch_id: uuid.UUID, db: AsyncSession = Depends(get_db)
     elements = []
 
     # 1. Header
-    elements.append(Paragraph("BrewBox — Financial Reconciliation Report", title_style))
+    elements.append(Paragraph("BrewBox - Financial Reconciliation Report", title_style))
     gen_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     elements.append(
         Paragraph(

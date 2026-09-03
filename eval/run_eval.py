@@ -7,7 +7,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from eval.metrics import (
@@ -30,7 +29,6 @@ def run_evaluation(batch_id: str, held_out_path: str = "data/testset/held_out.js
     with open(held_out_path, "r", encoding="utf-8") as f:
         ground_truth: list[dict] = json.load(f)
 
-    # Fetch report from local API
     url = f"http://localhost:8000/api/report/{batch_id}"
     try:
         with httpx.Client(timeout=10.0) as client:
@@ -49,7 +47,6 @@ def run_evaluation(batch_id: str, held_out_path: str = "data/testset/held_out.js
     exceptions = report.get("exceptions", [])
     summary = report.get("summary", {})
 
-    # Build reference lookup
     matched_refs = set()
     for m in matches:
         for r in (m.get("bank_record"), m.get("razorpay_record"), m.get("ledger_record")):
@@ -79,16 +76,15 @@ def run_evaluation(batch_id: str, held_out_path: str = "data/testset/held_out.js
         expected = item.get("expected")
 
         is_matched = ref in matched_refs
-        is_exception = ref in exception_refs or (not is_matched)
 
         if expected == "match":
             if is_matched:
                 tp += 1
             else:
                 fn += 1
-        else:  # expected == 'exception'
+        else:
             if is_matched:
-                fp += 1  # False positive / False match
+                fp += 1
             else:
                 tn += 1
 
@@ -104,7 +100,6 @@ def run_evaluation(batch_id: str, held_out_path: str = "data/testset/held_out.js
     f1_score = f1(prec, rec)
     tp_rate = throughput(total_records, duration)
 
-    # Render results table
     table = Table(title="FinController Reconciliation Benchmark", show_header=True, header_style="bold magenta")
     table.add_column("Metric", style="cyan", width=28)
     table.add_column("Value", style="bold green", justify="right", width=18)

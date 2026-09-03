@@ -23,13 +23,11 @@ async def ingest_files(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        # Create new Batch record
         batch_id = uuid.uuid4()
         batch_obj = Batch(id=batch_id, status="pending", total_records=0)
         db.add(batch_obj)
         await db.commit()
 
-        # Read CSV files into pandas
         bank_content = await bank_file.read()
         rp_content = await razorpay_file.read()
         ledger_content = await ledger_file.read()
@@ -40,7 +38,6 @@ async def ingest_files(
 
         normalized_db_records: list[NormalizedRecordDB] = []
 
-        # Process bank records
         for _, row in df_bank.iterrows():
             row_dict = row.to_dict()
             norm = normalize_record(row_dict, "bank", batch_id)
@@ -58,7 +55,6 @@ async def ingest_files(
                     )
                 )
 
-        # Process razorpay records
         for _, row in df_rp.iterrows():
             row_dict = row.to_dict()
             norm = normalize_record(row_dict, "razorpay", batch_id)
@@ -76,7 +72,6 @@ async def ingest_files(
                     )
                 )
 
-        # Process ledger records
         for _, row in df_ledger.iterrows():
             row_dict = row.to_dict()
             norm = normalize_record(row_dict, "ledger", batch_id)
@@ -94,7 +89,6 @@ async def ingest_files(
                     )
                 )
 
-        # Bulk insert records
         db.add_all(normalized_db_records)
         batch_obj.total_records = len(normalized_db_records)
         await db.commit()
@@ -104,7 +98,6 @@ async def ingest_files(
             "Dispatching background reconciliation graph."
         )
 
-        # Dispatch graph in background
         background_tasks.add_task(run_graph, str(batch_id))
 
         return {

@@ -28,13 +28,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="fincontroller — AI Finance Controller",
+    title="fincontroller - AI Finance Controller",
     description="Batch financial reconciliation agent for Razorpay AI Buildathon 2026",
     version="1.0.0",
     lifespan=lifespan,
 )
 
-# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -43,7 +42,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
 app.include_router(ingest_router)
 app.include_router(report_router)
 app.include_router(qa_router)
