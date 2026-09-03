@@ -58,7 +58,7 @@
 | Component | Technology / Library | Purpose |
 |---|---|---|
 | **Agent Orchestration** | LangGraph, LangChain | Stateful DAG with dynamic record routing |
-| **LLM Inference** | Groq (`llama3-70b-8192`) | Sub-500ms candidate disambiguation & Q&A |
+| **LLM Inference** | Groq (`openai/gpt-oss-120b`) | Candidate disambiguation & Q&A |
 | **Backend Framework** | FastAPI, Uvicorn | Async REST API & background task execution |
 | **Database & ORM** | PostgreSQL (Supabase), SQLAlchemy 2.0, asyncpg | Async persistence of batches, matches, exceptions |
 | **Vector Database** | ChromaDB, Sentence-Transformers | Semantic settlement document search & RAG |
@@ -102,7 +102,7 @@ SUPABASE_DB_URL=postgresql+asyncpg://postgres:<password>@<host>:5432/postgres
 GROQ_API_KEY=gsk_...
 CHROMA_PATH=./chroma_data
 CHROMA_COLLECTION=settlement_docs
-LLM_MODEL=llama3-70b-8192
+LLM_MODEL=openai/gpt-oss-120b
 LLM_MAX_RETRIES=3
 FUZZY_THRESHOLD=75
 FUZZY_AMOUNT_TOLERANCE_PCT=5.0

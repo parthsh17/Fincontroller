@@ -4,15 +4,14 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="BrewBox — AI Finance Controller",
-    page_icon="☕",
+    page_title="BrewBox",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 API_BASE_URL = "http://localhost:8000/api"
 
-# Custom styling
 st.markdown(
     """
     <style>
@@ -38,8 +37,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Navigation
-st.sidebar.title("☕ BrewBox FinController")
+st.sidebar.title("BrewBox FinController")
 st.sidebar.markdown("**AI-Powered 3-Way Reconciliation**")
 nav_page = st.sidebar.radio(
     "Navigation",
@@ -51,32 +49,30 @@ if "batch_id" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
-
-# PAGE 1: Upload & Run
 if nav_page == "1. Upload & Run":
     st.markdown('<div class="main-header">Batch Financial Ingestion</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Upload Bank Statement, Razorpay Settlement Report, and Internal Ledger CSV files.</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.subheader("🏦 Bank Statement")
+        st.subheader("Bank Statement")
         bank_file = st.file_uploader("Upload Bank Statement (CSV)", type=["csv"], key="bank")
     with col2:
-        st.subheader("💳 Razorpay Settlement")
+        st.subheader("Razorpay Settlement")
         rp_file = st.file_uploader("Upload Settlement Report (CSV)", type=["csv"], key="rp")
     with col3:
-        st.subheader("📖 Internal Ledger")
+        st.subheader("Internal Ledger")
         ledger_file = st.file_uploader("Upload Ledger (CSV)", type=["csv"], key="ledger")
 
     st.markdown("---")
 
     col_btn, col_info = st.columns([1, 3])
     with col_btn:
-        run_btn = st.button("🚀 Run Reconciliation", type="primary", use_container_width=True)
+        run_btn = st.button("Run Reconciliation", type="primary", use_container_width=True)
 
     if run_btn:
         if not (bank_file and rp_file and ledger_file):
-            st.error("⚠️ Please upload all 3 CSV files before running reconciliation.")
+            st.error("Please upload all 3 CSV files before running reconciliation.")
         else:
             with st.spinner("Uploading records and initiating reconciliation DAG..."):
                 try:
@@ -120,7 +116,7 @@ if nav_page == "1. Upload & Run":
                                     rep = rep_resp.json()
                                     s = rep.get("summary", {})
 
-                                    st.markdown("### 📊 Batch Summary")
+                                    st.markdown("### Batch Summary")
                                     mcol1, mcol2, mcol3, mcol4 = st.columns(4)
                                     mcol1.metric("Match Rate", f"{s.get('match_rate', 0.0):.1%}")
                                     mcol2.metric("Total Matched", s.get("total_matched", 0))
@@ -144,7 +140,7 @@ elif nav_page == "2. Reconciliation Results":
         st.session_state["batch_id"] = active_id
 
     if not st.session_state.get("batch_id"):
-        st.info("ℹ️ No active batch found. Upload files in '1. Upload & Run' or enter a Batch ID above.")
+        st.info("No active batch found. Upload files in '1. Upload & Run' or enter a Batch ID above.")
     else:
         current_id = st.session_state["batch_id"]
         try:
@@ -157,7 +153,7 @@ elif nav_page == "2. Reconciliation Results":
                     with col_pdf:
                         st.markdown("<br>", unsafe_allow_html=True)
                         st.link_button(
-                            "📥 Download PDF Report",
+                            "Download PDF Report",
                             f"{API_BASE_URL}/report/{current_id}/pdf",
                             type="secondary",
                             use_container_width=True,
@@ -173,7 +169,7 @@ elif nav_page == "2. Reconciliation Results":
                     st.markdown("---")
 
                     # Section 1: Matched Records
-                    st.subheader("✅ Matched Transactions")
+                    st.subheader("Matched Transactions")
                     matches = report.get("matches", [])
                     if matches:
                         table_rows = []
@@ -205,12 +201,12 @@ elif nav_page == "2. Reconciliation Results":
                         st.write("No matched records found.")
 
                     # Section 2: Exceptions
-                    st.subheader("⚠️ Exceptions & Reason Codes")
+                    st.subheader("Exceptions & Reason Codes")
                     exceptions = report.get("exceptions", [])
                     breakdown = report.get("exception_breakdown", [])
 
                     for item in breakdown:
-                        with st.expander(f"📌 {item.get('reason_code')} ({item.get('count')} records)"):
+                        with st.expander(f"{item.get('reason_code')} ({item.get('count')} records)"):
                             for rec in item.get("records", []):
                                 st.markdown(f"**Description:** {rec.get('description')}")
                                 st.json(rec.get("raw_records", {}))
@@ -230,7 +226,7 @@ elif nav_page == "3. Settlement Q&A":
     batch_id = st.session_state.get("batch_id") or ""
     current_id = st.text_input("Active Batch ID for Q&A Context:", value=batch_id)
 
-    st.markdown("##### 💡 Suggested Questions")
+    st.markdown("##### Suggested Questions")
     q_col1, q_col2 = st.columns(2)
     sample_q = None
     with q_col1:
@@ -271,6 +267,6 @@ elif nav_page == "3. Settlement Q&A":
         with st.chat_message("assistant"):
             st.write(entry["answer"])
             if entry.get("sources"):
-                with st.expander("📚 Sources & Evidence"):
+                with st.expander("Sources & Evidence"):
                     for src in entry["sources"]:
                         st.markdown(f"- {src}")

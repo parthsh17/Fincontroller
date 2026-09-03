@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 from backend.config import settings
+from backend.db.engine import db_url
 from backend.db.tables import Base
 
 config = context.config
@@ -15,7 +16,7 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-config.set_main_option("sqlalchemy.url", settings.supabase_db_url)
+config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
@@ -43,7 +44,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     configuration = config.get_section(config.config_ini_section) or {}
-    configuration["sqlalchemy.url"] = settings.supabase_db_url
+    configuration["sqlalchemy.url"] = db_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
